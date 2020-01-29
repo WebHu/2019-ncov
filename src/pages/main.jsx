@@ -91,12 +91,34 @@ const AreaTable = ({ data }) => {
   );
 };
 
-const News = ({ data }) => {
+
+const formatResponse = res => {
+  if (res.code === 'success' && res.successAndNotNull)
+    return res.data;
+  const err = new Error(res.message)
+  err.code = res.code;
+  err.response = res;
+  throw err;
+}
+
+
+const News = ({ data = [] }) => {
+  const [list, setData] = useState([]);
+  const fetchData = () =>
+    Promise
+      .resolve()
+      .then(() => fetch(`https://file1.dxycdn.com/2020/0127/794/3393185296027391740-115.json`))
+      .then(res => res.json())
+      .then(formatResponse)
+
+  useEffect(() => {
+    fetchData().then(setData);
+  }, []);
   return (
     <Panel title="实时新闻" >
       <ul className="news-list">
         {
-          (data || []).map(news => (
+          (list || data).map(news => (
             <li>
               <div>
                 <h3>{news.title}</h3>
@@ -112,32 +134,24 @@ const News = ({ data }) => {
   );
 };
 
-const Rumors = ({ num = '10' } = {}) => {
+const Rumors = ({ data = [] }) => {
   const [list, setData] = useState([]);
   const fetchData = () =>
     Promise
       .resolve()
       .then(() => fetch(`https://file1.dxycdn.com/2020/0127/797/3393185293879908067-115.json`))
       .then(res => res.json())
-      .then(res => {
-        if (res.code === 'success' && res.successAndNotNull)
-          return res.data;
-        const err = new Error(res.message)
-        err.code = res.code;
-        err.response = res;
-        throw err;
-      })
-      .then(setData)
+      .then(formatResponse)
 
   useEffect(() => {
-    fetchData();
+    fetchData().then(setData);
   }, []);
 
   return (
     <Panel title="官方辟谣" >
       <ul className="rumors-list">
         {
-          list.map(rumor => (
+          (list || data).map(rumor => (
             <li id={`rumor-${rumor.id}`} >
               <h3>{rumor.title}</h3>
               <a href={rumor.sourceUrl}>
@@ -169,7 +183,7 @@ const dxy_pneumonia = () =>
 const App = () => {
   const [data, setData] = useState({});
 
-  const { AreaStat, StatisticsService, TimelineService } = data;
+  const { AreaStat, StatisticsService, TimelineService, IndexRumorList } = data;
   const { imgUrl } = StatisticsService || {};
   useEffect(() => {
     dxy_pneumonia().then(setData);
@@ -181,7 +195,7 @@ const App = () => {
       <AreaMap data={imgUrl} />
       <AreaTable data={AreaStat} />
       <News data={TimelineService} />
-      <Rumors />
+      <Rumors data={IndexRumorList} />
       <Footer />
     </div>
   );
