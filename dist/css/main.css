@@ -1,7 +1,70 @@
 body {
+  width: 50%;
+  margin: auto;
   background-color: #fefefe;
 }
 
+.overview {
+  padding: 0;
+  display: -webkit-box;
+  display: flex;
+}
+
+.overview li {
+    -webkit-box-flex: 1;
+            flex: 1;
+    list-style: none;
+    text-align: center;
+  }
+
+.overview li em {
+      display: block;
+      text-align: center;
+      font-size: 22px;
+    }
+
+.overview li:nth-child(1) em {
+      color: #E25D4F;
+    }
+
+.overview li:nth-child(2) em {
+      color: #F99817;
+    }
+
+.overview li:nth-child(3) em {
+      color: #77B634;
+    }
+
+.overview li:nth-child(4) em {
+      color: #8D8FAA;
+    }
+
 .area-detail {
   width: 100%;
+  text-align: center;
+}
+
+.news-list, .rumors-list {
+  
+  padding: 0px;
+  list-style: none;
+}
+
+.news-list h3, .rumors-list h3 {
+    margin: 0;
+  }
+
+.news-list p, .rumors-list p {
+    color: #666;
+    font-size: 14px;
+  }
+
+footer {
+  border-top: 1px solid #eee;
+}
+
+@media screen and (max-width: 480px) {
+  body {
+    width: 95% !important;
+  }
 }

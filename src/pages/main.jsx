@@ -3,18 +3,16 @@ import ReactDOM from 'react-dom';
 
 import './main.css';
 
-const API = `http://lab.isaaclin.cn`;
-
-const request = path =>
-  Promise
-    .resolve()
-    .then(() => fetch(API + path))
-    .then(res => res.json())
-    .then(res => {
-      if (res.success)
-        return res.results;
-      throw res;
-    });
+const Panel = ({ title, children }) => {
+  return (
+    <div className="panel">
+      <h3 className="panel-title" >{title}</h3>
+      <div className="panel-body">
+        {children}
+      </div>
+    </div>
+  );
+};
 
 const Header = () => {
   return (
@@ -24,64 +22,45 @@ const Header = () => {
   );
 };
 
-const Overview = () => {
-  const [data, setData] = useState({});
-  const fetchData = () =>
-    Promise
-      .resolve()
-      .then(() => request('/nCoV/api/overall'))
-      .then(([result]) => result)
-      .then(setData)
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-  const { confirmedCount, suspectedCount, curedCount, deadCount } = data;
+const Overview = ({ data }) => {
+  const { confirmedCount, suspectedCount, curedCount, deadCount } = data || {};
   return (
     <ul className="overview" >
       <li>
-        <em>{confirmedCount}</em>
+        <em>{confirmedCount || 'N/A'}</em>
         <span>确诊病例</span>
       </li>
       <li>
-        <em>{suspectedCount}</em>
+        <em>{suspectedCount || 'N/A'}</em>
         <span>疑似病例</span>
       </li>
       <li>
-        <em>{curedCount}</em>
+        <em>{curedCount || 'N/A'}</em>
         <span>治愈人数</span>
       </li>
       <li>
-        <em>{deadCount}</em>
+        <em>{deadCount || 'N/A'}</em>
         <span>死亡人数</span>
       </li>
     </ul>
   );
 };
 
-const AreaMap = () => {
-  return (
-    <div></div>
-  );
-};
-
 const Trending = () => {
   return (
-    <div></div>
+    <Panel title="疫情趋势" ></Panel>
   );
 };
 
-const AreaDetail = () => {
-  const [area, setData] = useState([]);
-  const fetchData = () =>
-    Promise
-      .resolve()
-      .then(() => request(`/nCoV/api/area`))
-      .then(setData)
+const AreaMap = ({ data }) => {
+  return (
+    <Panel title="疫情地图" >
+      <img width="100%" src={data} />
+    </Panel>
+  );
+};
 
-  useEffect(() => {
-    fetchData()
-  }, []);
+const AreaTable = ({ data }) => {
   return (
     <table className="area-detail">
       <thead>
@@ -95,7 +74,7 @@ const AreaDetail = () => {
       </thead>
       <tbody>
         {
-          area
+          (data || [])
             .sort((a, b) => b.confirmedCount - a.confirmedCount)
             .map(p => (
               <tr>
@@ -112,31 +91,24 @@ const AreaDetail = () => {
   );
 };
 
-const News = ({ num = '10' } = {}) => {
-  const [list, setData] = useState([]);
-  const fetchData = () =>
-    Promise
-      .resolve()
-      .then(() => request(`/nCoV/api/news?num=${num}`))
-      .then(setData)
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
+const News = ({ data }) => {
   return (
-    <ul>
-      {
-        list.map(news => (
-          <li>
-            <h3>{news.title}</h3>
-            <p>{news.summary}</p>
-            <time>{news.pubDate}</time>
-            <a href={news.sourceUrl} >{news.infoSource}</a>
-          </li>
-        ))
-      }
-    </ul>
+    <Panel title="实时新闻" >
+      <ul className="news-list">
+        {
+          (data || []).map(news => (
+            <li>
+              <div>
+                <h3>{news.title}</h3>
+                <p>{news.summary}</p>
+                <time time={news.pubDate} >{news.pubDateStr}</time>
+                <a href={news.sourceUrl} >{news.infoSource}</a>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </Panel>
   );
 };
 
@@ -145,7 +117,16 @@ const Rumors = ({ num = '10' } = {}) => {
   const fetchData = () =>
     Promise
       .resolve()
-      .then(() => request(`/nCoV/api/rumors?num=${num}`))
+      .then(() => fetch(`https://file1.dxycdn.com/2020/0127/797/3393185293879908067-115.json`))
+      .then(res => res.json())
+      .then(res => {
+        if (res.code === 'success' && res.successAndNotNull)
+          return res.data;
+        const err = new Error(res.message)
+        err.code = res.code;
+        err.response = res;
+        throw err;
+      })
       .then(setData)
 
   useEffect(() => {
@@ -153,37 +134,58 @@ const Rumors = ({ num = '10' } = {}) => {
   }, []);
 
   return (
-    <ul>
-      {
-        list.map(rumor => (
-          <li id={`rumor-${rumor.id}`} >
-            <h3>{rumor.title}</h3>
-            <a href={rumor.sourceUrl}>
-              <p>{rumor.mainSummary}</p>
-            </a>
-            <p>{rumor.body}</p>
-          </li>
-        ))
-      }
-    </ul>
+    <Panel title="官方辟谣" >
+      <ul className="rumors-list">
+        {
+          list.map(rumor => (
+            <li id={`rumor-${rumor.id}`} >
+              <h3>{rumor.title}</h3>
+              <a href={rumor.sourceUrl}>
+                <p>{rumor.mainSummary}</p>
+              </a>
+              <p>{rumor.body}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </Panel>
   );
 }
 
-class App extends React.Component {
-  render() {
-    return (
-      <div>
-        <Header />
-        <Overview />
-        <AreaMap />
-        <Trending />
-        <AreaDetail />
-        <News />
-        <Rumors />
-      </div>
-    );
-  }
-}
+const Footer = () => {
+  return (
+    <footer>
+      <p>数据由 <a href="">丁香园</a> 提供，<a href="https://github.com/song940/2019-ncov" >项目源代码</a>遵循 MIT 协议发布 &copy; <a href="https://lsong.org" >LSONG.ORG</a></p>
+    </footer>
+  );
+};
+
+const dxy_pneumonia = () =>
+  Promise
+    .resolve()
+    .then(() => fetch(`https://dxy-pneumonia.lsong.workers.dev`))
+    .then(res => res.json())
+
+const App = () => {
+  const [data, setData] = useState({});
+
+  const { AreaStat, StatisticsService, TimelineService } = data;
+  const { imgUrl } = StatisticsService || {};
+  useEffect(() => {
+    dxy_pneumonia().then(setData);
+  }, []);
+  return (
+    <div>
+      <Header />
+      <Overview data={StatisticsService} />
+      <AreaMap data={imgUrl} />
+      <AreaTable data={AreaStat} />
+      <News data={TimelineService} />
+      <Rumors />
+      <Footer />
+    </div>
+  );
+};
 
 ReactDOM.render(<App />,
   document.getElementById('app'));
